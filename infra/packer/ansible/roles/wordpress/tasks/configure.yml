@@ -1,0 +1,9 @@
+--
+# configure things that don't necessarily need to change at runtime and build them into the AMI
+- name: build a template
+  become: yes
+  template:
+    src: some-config.conf.j2
+    dest: /etc/wordpress/conf.yml
+    owner: wordpress
+    group: wordpress

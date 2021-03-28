@@ -1,0 +1,7 @@
+---
+# I just mimicked wordpress install steps in ansible but you could also take an ansible-galaxy role
+# Install with: `ansible-galaxy install -r requirements.yml`
+# then simply reference that role in the ansible install playbook
+- name: some.wordpressRole
+  src: https://github.com/some-wordpress-role-author/wordpress-role.git
+  version: 1.2.3

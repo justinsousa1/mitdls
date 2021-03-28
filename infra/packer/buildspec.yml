@@ -1,0 +1,37 @@
+---
+version: 0.2
+env:
+  variables:
+    CODE_VERSION: "dev"
+    AWS_REGION: "us-east-1"
+  secrets-manager:
+    REPO_CREDS: "github_creds"
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+  pre_build:
+    commands:
+      - echo "Installing Packer..."
+      - curl -qL -o packer.zip https://releases.hashicorp.com/packer/1.5.4/packer_1.5.4_linux_amd64.zip && unzip packer.zip && chmod +x ./packer && mv ./packer /usr/local/bin
+      - echo "Installing jq..."
+      - curl -qL -o jq https://stedolan.github.io/jq/download/linux64/jq && chmod +x ./jq && mv ./jq /usr/local/bin
+      - pip install --upgrade pip
+      - pip install --upgrade 'ansible<2.10'
+      - echo "Validating packer template"
+      - echo ${PATH} && pwd && ls `pwd`
+      - cd infra/packer
+      - packer validate -var code_version=${CODE_VERSION} webserver-ami.json
+  build:
+    commands:
+      - echo "Configuring AWS credentials"
+      - curl -qL -o aws_credentials.json http://169.254.170.2/$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI > aws_credentials.json
+      - aws configure set region $AWS_REGION
+      - aws configure set aws_access_key_id `jq -r '.AccessKeyId' aws_credentials.json`
+      - aws configure set aws_secret_access_key `jq -r '.SecretAccessKey' aws_credentials.json`
+      - aws configure set aws_session_token `jq -r '.Token' aws_credentials.json`
+      - packer build -var code_version=${CODE_VERSION} -var aws_region=${AWS_REGION} webserver-ami.json | tee build.log
+  post_build:
+    commands:
+      - egrep "${AWS_REGION}\:\sami\-" build.log | cut -d' ' -f2 > ami_id.txt
+      - test -s ami_id.txt || exit 1

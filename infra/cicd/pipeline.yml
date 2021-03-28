@@ -1,0 +1,10 @@
+---
+# a ci/cd pipeline
+steps:
+  - checkout code
+  - run unit tests, integration tests, linting and any other code quality metrics
+  - produce artifacts (run packer to produce ami/static files etc)
+  - promote to environment based on branch
+    - if branch = dev, deploy to dev
+    - if branch = staging, deploy to staging
+    - if branch = main/prod, deploy to prod

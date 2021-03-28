@@ -1,0 +1,5 @@
+---
+wordpress_version: 1.2.3
+worpress_config_dir: /etc/wordpress
+wordpress_user: wp
+wordpress_group: wp

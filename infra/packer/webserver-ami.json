@@ -1,0 +1,73 @@
+{
+  "variables": {
+    "aws_region": "us-east-1",
+    "instance_type": "t2.medium",
+    "code_version": "dev",
+    "codebuild_build_id": "{{ env `CODEBUILD_BUILD_ID` }}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "ami_name": "wordpress-site-{{ user `code_version` }}_{{ isotime | clean_resource_name }}",
+    "instance_type": "{{ user `instance_type`}}",
+    "region": "{{user `aws_region`}}",
+    "run_tags": {
+      "Name": "Packer Builder Wordpress Site:  {{ user `codebuild_build_id` }}"
+    },
+    "launch_block_device_mappings": [
+     {
+      "device_name": "/dev/xvda",
+      "delete_on_termination": true,
+      "encrypted": true,
+      "kms_key_id": "some-kms-key-id",
+      "volume_size": "15",
+      "volume_type": "gp2"
+    }],
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "some-base-ami*",
+        "root-device-type": "ebs"
+      },
+      "owners": ["self"],
+      "most_recent": true
+    },
+    "ssh_username": "ec2-user",
+    "ami_description": "ami for wordpress site: {{ user `code_version` }}",
+    "tags": {
+      "Name": "wordpress-site-{{ user `code_version` }}_{{ isotime | clean_resource_name }}",
+      "OS": "amzn2",
+      "created_on": "{{isotime \"2006-01-02\" }}",
+      "created_dt": "{{ isotime | clean_resource_name }}",
+      "code_version": "{{ user `code_version` }}"
+    },
+    "vpc_filter": {
+      "filters": {
+        "isDefault": "true"
+      }
+    }
+  }],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "../bootstrapping-scripts/base-installs.sh",
+      "destination": "/tmp/"
+    },
+    {
+      "type": "shell",
+      "inline": ["sudo /bin/bash /tmp/base-installs.sh"]
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "./ansible/install-wordpress.yml",
+      "user": "ec2-user",
+      "galaxy_file": "./ansible/requirements.yml",
+      "extra_arguments": ["--extra-vars","code_version={{ user `code_version` }}"]
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "manifest"
+    }
+  ]
+}
+

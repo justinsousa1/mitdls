@@ -1,0 +1,1 @@
+single sns topic per aws acct. for alerting for staging/prod envs

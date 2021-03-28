@@ -1,0 +1,1 @@
+create sns topic for being notified of alerts for the site

@@ -1,0 +1,6 @@
+---
+- name: install wordpress (if only it were this easy)
+  become: yes
+  yum:
+    state: installed
+    name: wordpress
